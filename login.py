@@ -6,24 +6,34 @@ import time
 
 import requests
 
-# from colorama import init
-#
-# init(autoreset=True)
 
-account_info = ["your_account", "your_password"]
+def main() -> int:
+    n_retry = 3
+
+    print("\n\n==============")
+    print("""
+    注意!!
+    首先连接上WiFi “csust—bg” 或者插上办公区的网线\n
+    """)
+    print("本程序仅供学习用途\n")
+    print("=============\n")
+
+    id, password = load_account()
+    print(f"登录帐号：{id}")
+
+    for i in range(1, n_retry + 1):
+        if is_online():
+            print(f"==> 网络已连接")
+            return 0
+
+        print(f"==> 第 {i} 次 尝试")
+
+        login(id, password)
+
+    return 1
 
 
-def load_account_info():
-    account_file_path = f"{os.path.realpath(os.path.dirname(__file__))}/account.txt"
-
-    with open(account_file_path, "r") as fd:
-        account_info[0] = fd.readline().rstrip()
-        account_info[1] = fd.readline().rstrip()
-
-    print("Account:", account_info[0])
-
-
-def login():
+def login(id, password):
     url = "http://1.1.1.1"
     try:
         a = requests.get(url=url, allow_redirects=False, timeout=5)
@@ -62,11 +72,9 @@ def login():
             wlanacname=wlanacname,
             wlanuserip=wlanuserip,
         )
-        account = account_info[0]
-        pswd = account_info[-1]
         data = {
-            "DDDDD": ",0,{}".format(account),
-            "upass": "{}".format(pswd),
+            "DDDDD": ",0,{}".format(id),
+            "upass": "{}".format(password),
             "R1": "0",
             "R2": "0",
             "R3": "0",
@@ -81,14 +89,7 @@ def login():
         print("请检查网络是否能访问 1.1.1.1 和 192.168.7.221")
 
 
-def check():
-    print("\n\n==============")
-    print("""
-    注意!!
-    首先连接上WiFi “csust—bg” 或者插上办公区的网线\n
-    """)
-    print("本程序仅供学习用途\n")
-    print("=============\n")
+def is_online():
     print("检查网络中~~~~~~,请稍后")
     try:
         a = requests.get("https://www.baidu.com", timeout=1).text
@@ -101,15 +102,18 @@ def check():
         print("=============\n")
         return True
     else:
-        print("断网或者连接失败，尝试登陆中~~~~~")
-        print("正在连接~~~")
-        login()
+        return False
 
 
-def main():
-    load_account_info()
-    check()
+def load_account():
+    account_file_path = f"{os.path.realpath(os.path.dirname(__file__))}/account.txt"
+
+    with open(account_file_path, "r") as fd:
+        id = fd.readline().rstrip()
+        password = fd.readline().rstrip()
+
+    return id, password
 
 
 if __name__ == "__main__":
-    main()
+    exit(main())
