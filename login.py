@@ -1,23 +1,14 @@
 #!/usr/bin/env python3
 
 import os
-import re
 import time
+from urllib.parse import urlparse, parse_qs
 
 import requests
 
 
 def main() -> int:
     n_retry = 3
-
-    print("\n\n==============")
-    print("""
-    注意!!
-    首先连接上WiFi “csust—bg” 或者插上办公区的网线\n
-    """)
-    print("本程序仅供学习用途\n")
-    print("=============\n")
-
     id, password = load_account()
     print(f"登录帐号：{id}")
 
@@ -28,65 +19,49 @@ def main() -> int:
 
         print(f"==> 第 {i} 次 尝试")
 
-        login(id, password)
+        if login(id, password):
+            print("==> 登录成功")
+        else:
+            print("==> 登录失败")
 
     return 1
 
 
-def login(id, password):
+def login(id, password) -> bool:
     url = "http://1.1.1.1"
     try:
         a = requests.get(url=url, allow_redirects=False, timeout=5)
         url2 = a.headers["Location"]
         print(url2)
-        b = str(url2).split("&")
-        wlanuserip = ""
-        wlanacname = ""
-        wlanacip = ""
-        wlanusermac = ""
 
-        for i in b:
-            if "wlanuserip" in i:
-                wlanuserip = i.split("=")[-1]
-            elif "wlanacip" in i:
-                wlanacip = i.split("=")[-1]
-            elif "wlanacname" in i:
-                wlanacname = i.split("=")[-1]
-            elif "wlanusermac" in i:
-                wlanusermac = i.split("=")[-1][:12]
-                wlanusermac = re.findall(r"\w{1,2}", wlanusermac)
-                wlanusermac = "-".join(wlanusermac)
+        parsed = urlparse(url2)
+        info = parse_qs(parsed.query)
+        userip = info['wlanuserip'][0]
+        acname = info['wlanacname'][0]
+        acip = info['wlanacip'][0]
+        usermac = info['wlanusermac'][0]
+
         print("获取相关信息中")
         print("====================================")
-        print("路由器网关地址:" + wlanuserip)
-        print("连接路由器型号:" + wlanacname)
-        print("用户IP地址:" + wlanacip)
-        print("路由器MAC地址:" + wlanusermac)
+        print("路由器网关地址:" + userip)
+        print("连接路由器型号:" + acname)
+        print("用户IP地址:" + acip)
+        print("路由器MAC地址:" + usermac)
         print("====================================")
         time.sleep(1)
         print("开始尝试登陆~~~")
-        time.sleep(2)
-        post_url = "http://192.168.7.221:801/eportal/?c=ACSetting&a=Login&protocol=http:&hostname=192.168.7.221&iTermType=1&wlanuserip={wlanuserip}&wlanacip={wlanacip}&wlanacname={wlanacname}&mac={wlanusermac}&ip={wlanuserip}&enAdvert=0&queryACIP=0&loginMethod=1".format(
-            wlanusermac=wlanusermac,
-            wlanacip=wlanacip,
-            wlanacname=wlanacname,
-            wlanuserip=wlanuserip,
-        )
-        data = {
-            "DDDDD": ",0,{}".format(id),
-            "upass": "{}".format(password),
-            "R1": "0",
-            "R2": "0",
-            "R3": "0",
-            "R6": "0",
-            "para": "00",
-            "0MKKey": "123456",
-        }
-        requests.post(url=post_url, data=data)
-        check()
+        login_url = f"https://login.csust.edu.cn:802/eportal/portal/login?callback=dr1003&login_method=1&user_account=%2C0%2C{id}&user_password={password}&wlan_user_ip={userip}&wlan_user_ipv6=&wlan_user_mac={usermac}&wlan_ac_ip={acip}&wlan_ac_name={acip}&jsVersion=4.2.1&terminal_type=1&lang=zh-cn&v=2625&lang=zh"
+        r = requests.get(login_url)
+        msg = r.content.decode('utf-8')
+        print(f"==> 登录信息：{msg}")
+
+        return "成功" in msg
+
     except:
         print("发起网络请求失败")
         print("请检查网络是否能访问 1.1.1.1 和 192.168.7.221")
+
+    return True
 
 
 def is_online():
