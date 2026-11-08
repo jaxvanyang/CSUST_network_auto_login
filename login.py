@@ -21,6 +21,7 @@ def main() -> int:
 
         if login(id, password):
             print("==> 登录成功")
+            return 0
         else:
             print("==> 登录失败")
 
